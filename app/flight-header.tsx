@@ -41,7 +41,7 @@ export default function FlightHeader({lang,page,slug,alternateSlug}:{lang:Lang;p
   const menus:{key:MenuKey;label:string;heading:string;overview:PageKey;links:{href:string;title:string;description?:string}[]}[]=[
     {key:'expertise',label:fr?'Expertises':'Expertise',heading:fr?'De la conception à l’exploitation.':'From design to operation.',overview:'services',links:services.map(service=>({href:linkTo(lang,'services',service[lang].slug),title:service[lang].title,description:service[lang].short}))},
     {key:'industries',label:fr?'Secteurs':'Industries',heading:fr?'L’ingénierie dans votre industrie.':'Engineering for your industry.',overview:'sectors',links:sectorData.map(sector=>({href:linkTo(lang,'sectors',sector.id),title:sector[lang].title,description:sector[lang].intro}))},
-    {key:'resources',label:fr?'Ressources':'Resources',heading:fr?'Explorer la mécanique et notre activité.':'Explore engineering and our work.',overview:'blog',links:resourceLinks.map(([key,title])=>({href:linkTo(lang,key),title}))}
+    {key:'resources',label:fr?'Ressources':'Resources',heading:fr?'Explorer la mécanique et notre activité.':'Explore engineering and our work.',overview:'blog',links:[...resourceLinks.map(([key,title])=>({href:linkTo(lang,key),title})),{href:linkTo(lang,'method')+'#robot-lab-heading',title:fr?'Exploration 3D':'3D exploration'}]}
   ];
   const selected=menus.find(menu=>menu.key===(open||displayed));
   const close=()=>{closeDropdown();setMobile(false);};
