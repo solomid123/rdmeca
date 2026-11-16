@@ -18,7 +18,9 @@ Editorial seed content is in `editorial-seed.mjs`, separate from schema migratio
 
 ## Brand and media
 
-The current design uses the owner's November 2026 indigo/navy logo and silver variant. The colour logo appears in the header and downloads; the silver logo appears on the dark footer. `app/home-intro.tsx` defines the new homepage composition and `app/brand.css` defines the shared brand surfaces, responsive layouts and larger typography. Ordinary body text is 18–21px and supporting text is at least 16px. Glass effects are restrained to navigation and selected panels. The brand kit includes both new transparent logo variants.
+The current design uses the owner's November 2026 indigo/navy logo and silver variant. The colour logo appears in the header and downloads; the silver logo appears on the dark footer. `app/home-intro.tsx` defines the new homepage composition and `app/brand.css` defines the shared brand surfaces and responsive typography. Ordinary body text is 16–17px, supporting text is generally 13–15px, and headline sizes are restrained. Glass effects are limited to navigation and selected panels. The brand kit includes both new transparent logo variants.
+
+The owner's requested typeface is Neue Einstellung. The preferred font family is configured in the shared font stack, but Neue Einstellung webfont files have not been supplied and are not present locally. Manrope remains the rendered fallback until the actual licensed webfont package is available. Do not describe the fallback as Neue Einstellung. Once the package is supplied, add its files and weight-specific @font-face declarations without fetching protected font files from another site's assets.
 
 Logo: supplied R&D MECA PNG with transparent margins cropped. Photos: aluminum Zheng ji and Jelifer Maniago / Unsplash. Videos: Daniel Smyth / Pexels. Media is illustrative and is never presented as R&D MECA facilities or completed client projects. Confirmed real client projects can replace the labelled application cases through the content API. A downloadable bilingual brand kit is included.
 
