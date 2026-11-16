@@ -1,0 +1,21 @@
+.content-image.journal-collage-image {
+  background: #fff;
+}
+.content-image.journal-collage-image > img {
+  object-fit: contain;
+  filter: none;
+}
+.article-cover.journal-collage-cover {
+  height: clamp(320px, 40vw, 560px);
+  background: #fff;
+}
+.article-cover.journal-collage-cover > img {
+  object-fit: contain;
+  filter: none;
+}
+@media (max-width: 767px) {
+  .article-cover.journal-collage-cover {
+    height: auto;
+    aspect-ratio: 1;
+  }
+}
