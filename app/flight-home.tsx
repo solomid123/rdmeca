@@ -1,6 +1,6 @@
 'use client';
 import {useRef} from 'react';
-import Link from 'next/link';
+import Link from './site-link';
 import {ArrowRight,ArrowLeft} from 'lucide-react';
 import {services,copy,linkTo,type Lang,type ContentItem} from './site-data';
 import FlightField,{TypedText} from './flight-field';

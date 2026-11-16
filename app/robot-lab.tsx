@@ -1,6 +1,6 @@
 'use client';
 import {useEffect, useRef, useState} from 'react';
-import Link from 'next/link';
+import Link from './site-link';
 import {ArrowLeft, ArrowRight, Box, Grid3X3, RotateCcw, Play, Pause, Maximize2, Minimize2, Plus, Minus, Move, MousePointer2, LoaderCircle} from 'lucide-react';
 import {linkTo, type Lang} from './site-data';
 import type {RobotEngine, RobotStage, RobotView} from './robot-engine';

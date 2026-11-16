@@ -1,6 +1,6 @@
 'use client';
 import {useEffect,useRef,useState} from 'react';
-import Link from 'next/link';
+import Link from './site-link';
 import {ArrowRight,ChevronDown,Globe,Menu,X} from 'lucide-react';
 import {services,sectorData,linkTo,type Lang,type PageKey} from './site-data';
 

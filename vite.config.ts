@@ -1,4 +1,5 @@
 import vinext from "vinext";
+import {readdirSync,statSync} from 'node:fs';
 import { defineConfig } from "vite";
 import hostingConfig from "./.openai/hosting.json";
 import { readExecutionProfile } from "./scripts/execution-profile.mjs";
@@ -44,6 +45,9 @@ export default defineConfig(async ({ command }) => {
   const { cloudflare } = await import("@cloudflare/vite-plugin");
 
   return {
+    define:{
+      __RDM_VIDEO_ASSET_SIZES__:JSON.stringify(Object.fromEntries(readdirSync(new URL('./public/assets/',import.meta.url)).filter(name=>name.endsWith('.mp4')).map(name=>['/assets/'+name,statSync(new URL('./public/assets/'+name,import.meta.url)).size]))),
+    },
     server: {
       ...(managedLinux
         ? { host: "0.0.0.0", allowedHosts: ["terminal.local"] }

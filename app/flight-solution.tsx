@@ -1,6 +1,6 @@
 'use client';
 import {useRef,useState} from 'react';
-import Link from 'next/link';
+import Link from './site-link';
 import {linkTo,services,type Lang} from './site-data';
 import FlightField from './flight-field';
 

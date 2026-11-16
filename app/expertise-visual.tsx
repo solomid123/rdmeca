@@ -1,6 +1,6 @@
 'use client';
 import {useEffect,useRef,useState} from 'react';
-import Link from 'next/link';
+import Link from './site-link';
 import {Pause,Play} from 'lucide-react';
 import type {Lang} from './site-data';
 

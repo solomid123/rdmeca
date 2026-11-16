@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import Link from './site-link';
 import {ArrowUpRight,ArrowRight,Cog,Gauge,Play} from 'lucide-react';
 import {copy,services,linkTo,type Lang,type ContentItem} from './site-data';
 

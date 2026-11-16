@@ -1,6 +1,6 @@
 export {business,services,copy} from '../content.mjs';
 export type Lang='fr'|'en';
-export type ContentItem={id:string;type:string;slug:string;locale:string;title:string;summary:string;category:string;image:string;mediaUrl:string|null;duration:string|null;illustrative:boolean;publishedAt:string;body?:string};
+export type ContentItem={id:string;type:string;slug:string;locale:string;title:string;summary:string;category:string;image:string;mediaUrl:string|null;duration:string|null;illustrative:boolean;publishedAt:string;body?:string;startTime?:number};
 export const routes={fr:{home:'',services:'expertises',about:'a-propos',method:'methodologie',sectors:'secteurs',portfolio:'portfolio',blog:'blog',videos:'mediatheque',press:'presse',contact:'contact',privacy:'confidentialite'},en:{home:'',services:'expertise',about:'about',method:'method',sectors:'industries',portfolio:'portfolio',blog:'blog',videos:'media',press:'press',contact:'contact',privacy:'privacy'}};
 export type PageKey=keyof typeof routes.fr;
 export function linkTo(lang:Lang,page:PageKey,slug?:string){return (lang==='en'?'/en/':'/')+routes[lang][page]+(routes[lang][page]?'/':'')+(slug?slug+'/':'');}

@@ -1,0 +1,42 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "rdmeca",
+  "account_id": "4edc005c163d52f8e517ead296f632c7",
+  "main": "dist/server/index.js",
+  "compatibility_date": "2026-05-15",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "no_bundle": true,
+  "rules": [
+    {
+      "type": "ESModule",
+      "globs": [
+        "**/*.js",
+        "**/*.mjs"
+      ]
+    }
+  ],
+  "assets": {
+    "directory": "./dist/client",
+    "binding": "ASSETS",
+    "run_worker_first": [
+      "/assets/*.mp4"
+    ]
+  },
+  "workers_dev": true,
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "rdmeca-production",
+      "database_id": "87c7105f-0660-4ef9-bab1-79205043c26d",
+      "migrations_dir": "./drizzle"
+    }
+  ],
+  "vars": {
+    "PUBLIC_SITE_URL": "https://rdmeca.rdmeca-consultancy.workers.dev"
+  },
+  "observability": {
+    "enabled": true
+  }
+}

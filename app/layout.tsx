@@ -1,16 +1,17 @@
 import type { Metadata } from "next";
 import {headers} from 'next/headers';
+import {getSiteOrigin} from '../lib/site-origin';
 import "./globals.css";
 
-export const metadata: Metadata = {
+export function generateMetadata(): Metadata {return {
   title: {default: "R&D MECA — Ingénierie & maintenance industrielle", template: "%s — R&D MECA"},
   description: "R&D MECA au Maroc : conception mécanique, calcul, industrialisation et maintenance industrielle.",
-  metadataBase: new URL("https://rdmeca-consultancy.okimanlolq.chatgpt.site"),
+  metadataBase: new URL(getSiteOrigin()),
   icons: {
     icon: "/assets/favicon.png",
     shortcut: "/assets/favicon.png",
   },
-};
+};}
 
 export default async function RootLayout({
   children,
