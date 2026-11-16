@@ -20,6 +20,10 @@ export default async function RootLayout({
   const lang=(await headers()).get('x-rdmeca-lang')==='en'?'en':'fr';
   return (
     <html lang={lang}>
+      <head>
+        <link rel="preload" href="/assets/fonts/neue-einstellung-regular.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+        <link rel="preload" href="/assets/fonts/neue-einstellung-extrabold.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+      </head>
       <body className="antialiased">{children}</body>
     </html>
   );

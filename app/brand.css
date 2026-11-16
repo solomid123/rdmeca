@@ -10,7 +10,7 @@
   --teal: #3430b8;
   --night: #0b0c25;
   --max: 1480px;
-  --sans: "Neue Einstellung", Manrope, Arial, sans-serif;
+  --sans: "Neue Einstellung", Arial, sans-serif;
   --mono: var(--sans);
   --glass: rgba(255,255,255,.74);
   --shadow: 0 16px 48px rgba(25,28,83,.07);
