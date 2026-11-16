@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const origin='http://127.0.0.1:4173';
+const token=readFileSync('.dev.vars','utf8').split('\n').find(s=>s.startsWith('CMS_WRITE_TOKEN='))?.slice(16).trim();
+const input={submissionKey:crypto.randomUUID(),name:'Local verification',company:'Development check',email:'qa@example.com',phone:'',service:'design',message:'Local verification of persistent enquiries and retry handling.',locale:'fr',consent:true,website:''};
+const submit=()=>fetch(origin+'/api/contact',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)});
+const first=await submit();assert.equal(first.status,201);const firstData=await first.json();assert.match(firstData.reference,/^RDM-2026-[A-F0-9]{8}$/);
+const second=await submit();assert.equal(second.status,200);assert.equal((await second.json()).reference,firstData.reference);
+const records=await(await fetch(origin+'/api/cms/enquiries',{headers:{Authorization:'Bearer '+token}})).json();const matching=records.items.filter(i=>i.submissionKey===input.submissionKey);assert.equal(matching.length,1);assert.equal(matching[0].message,input.message);assert.equal(matching[0].email,input.email);
+const invalid=await fetch(origin+'/api/contact',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...input,submissionKey:crypto.randomUUID(),consent:false})});assert.equal(invalid.status,400);
+console.log('Passed: successful enquiry persistence, unique reference, idempotent retry, saved fields and required privacy acknowledgement. Only the local preview database was modified.');

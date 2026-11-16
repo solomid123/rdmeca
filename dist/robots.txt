@@ -1,3 +1,0 @@
-User-agent: *
-Allow: /
-Sitemap: https://rdmeca-consultancy.okimanlolq.chatgpt.site/sitemap.xml
