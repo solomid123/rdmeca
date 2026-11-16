@@ -42,5 +42,5 @@ export default function FlightIconWave() {
     document.addEventListener('visibilitychange',policy);reduced.addEventListener('change',policy);measure();
     return()=>{cancelAnimationFrame(frame);resize.disconnect();visibility.disconnect();start.disconnect();window.removeEventListener('scroll',scroll);window.removeEventListener('resize',measure);document.removeEventListener('visibilitychange',policy);reduced.removeEventListener('change',policy);};
   },[]);
-  return <div ref={ref} className="ag-icon-wave" aria-hidden="true">{icons.map((Icon,index)=><span key={index} style={{'--wave':Math.sin(index*.5)*-35+'px'} as CSSProperties}><Icon strokeWidth={1.3}/></span>)}</div>;
+  return <div ref={ref} className="ag-icon-wave" aria-hidden="true">{icons.map((Icon,index)=><span key={index} style={{'--wave':(Math.sin(index*.5)*-35).toFixed(3)+'px'} as CSSProperties}><Icon strokeWidth={1.3}/></span>)}</div>;
 }
