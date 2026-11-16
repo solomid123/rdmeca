@@ -18,12 +18,12 @@ export default function RobotLab({lang}: {lang: Lang}) {
     {label: 'Conception', code: 'CAO', title: 'La géométrie, sous tous les angles.', description: 'Isolez le bras structurel du robot. Explorez ses volumes, ses interfaces et ses deux articulations.'},
     {label: 'Maillage', code: 'SURFACE', title: 'Lire la structure de la pièce.', description: 'La triangulation se superpose à la géométrie. Rapprochez-vous des articulations pour examiner le maillage de surface.'},
     {label: 'Contraintes', code: 'σ REL.', title: 'Une autre lecture de la même géométrie.', description: 'Un champ qualitatif de flexion habille la géométrie du bleu au rouge. Faites tourner la pièce pour observer sa répartition sur les faces.'},
-    {label: 'Intégration', code: 'ROBOT', title: 'Retrouver la pièce dans son ensemble.', description: 'Le bras rejoint le robot complet. Sa couleur indigo permet de suivre sa place et ses interfaces dans l’assemblage.'},
+    {label: 'Intégration', code: 'ROBOT', title: 'Retrouver la pièce dans son ensemble.', description: 'Le bras rejoint le robot complet, avec ses couleurs d’origine. Explorez ses interfaces et sa place dans l’assemblage.'},
   ] : [
     {label: 'Design', code: 'CAD', title: 'Geometry, from every angle.', description: 'Isolate the robot’s structural arm. Explore its volumes, interfaces and two joints.'},
     {label: 'Meshing', code: 'SURFACE', title: 'Read the component’s structure.', description: 'Triangulation is layered over the geometry. Zoom into the joints to inspect the surface mesh.'},
     {label: 'Stress', code: 'REL. σ', title: 'Another perspective on the same geometry.', description: 'A qualitative bending field colours the geometry from blue to red. Rotate the component to explore how it varies across the surfaces.'},
-    {label: 'Integration', code: 'ROBOT', title: 'See the component in context.', description: 'The arm returns to the complete robot. Its indigo colour highlights its position and interfaces within the assembly.'},
+    {label: 'Integration', code: 'ROBOT', title: 'See the component in context.', description: 'The arm returns to the complete robot in its original colours. Explore its interfaces and its position within the assembly.'},
   ];
 
   useEffect(() => {
@@ -79,7 +79,7 @@ export default function RobotLab({lang}: {lang: Lang}) {
   }
   const ready = state === 'ready' || state === 'assembly';
   const loading = state === 'idle' || state === 'component' || state === 'assembly';
-  const canvasLabel = fr ? 'Vue 3D du bras du robot. Flèches pour tourner, Majuscule et flèches pour déplacer, plus et moins pour zoomer, touche Début pour recentrer.' : '3D robot arm. Arrow keys rotate, Shift and arrows pan, plus and minus zoom, Home resets the view.';
+  const canvasLabel = fr ? 'Vue 3D du bras du robot. Flèches pour tourner, Q et E pour le roulis, Majuscule et flèches pour déplacer, plus et moins pour zoomer, touche Début pour recentrer.' : '3D robot arm. Arrow keys rotate, Q and E roll, Shift and arrows pan, plus and minus zoom, Home resets the view.';
 
   return <section className="ag-process robot-lab" ref={section} aria-labelledby="robot-lab-heading">
     <div className="ag-container">
@@ -96,6 +96,8 @@ export default function RobotLab({lang}: {lang: Lang}) {
           else if (event.key === 'ArrowRight') engine.current?.rotate(.13, 0);
           else if (event.key === 'ArrowUp') engine.current?.rotate(0, -.1);
           else if (event.key === 'ArrowDown') engine.current?.rotate(0, .1);
+          else if (event.key.toLowerCase() === 'q') engine.current?.roll(-.13);
+          else if (event.key.toLowerCase() === 'e') engine.current?.roll(.13);
           else if (event.key === '+' || event.key === '=') engine.current?.zoom(1);
           else if (event.key === '-') engine.current?.zoom(-1);
           else if (event.key === 'Home') {setView('isometric'); engine.current?.reset();}

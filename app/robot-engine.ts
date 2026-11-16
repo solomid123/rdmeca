@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import {GLTFLoader, type GLTF} from 'three/addons/loaders/GLTFLoader.js';
-import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {TrackballControls} from 'three/addons/controls/TrackballControls.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
+import {rotateRobotCamera} from './robot-motion';
 
 export type RobotStage = 0 | 1 | 2 | 3;
 export type RobotView = 'isometric' | 'front' | 'side';
@@ -13,6 +14,7 @@ export type RobotEngine = {
   setView: (view: RobotView) => void;
   zoom: (direction: number) => void;
   rotate: (horizontal: number, vertical: number) => void;
+  roll: (angle: number) => void;
   pan: (horizontal: number, vertical: number) => void;
   reset: () => void;
   dispose: () => void;
@@ -65,11 +67,14 @@ export function createRobotEngine(host: HTMLDivElement, callbacks: Callbacks, si
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(38, 1, .005, 60);
-  const controls = new OrbitControls(camera, canvas);
-  controls.enableDamping = true;
-  controls.dampingFactor = .09;
-  controls.screenSpacePanning = true;
-  controls.autoRotateSpeed = .65;
+  camera.position.set(.66, .32, 1.56);
+  const controls = new TrackballControls(camera, canvas);
+  controls.staticMoving = true;
+  controls.rotateSpeed = 2.2;
+  controls.zoomSpeed = 1.1;
+  controls.panSpeed = .45;
+  controls.multiTouchRoll = true;
+  controls.keys = ['', '', ''];
   controls.minDistance = .2;
   controls.maxDistance = 8;
   controls.target.set(0, 0, 0);
@@ -93,13 +98,13 @@ export function createRobotEngine(host: HTMLDivElement, callbacks: Callbacks, si
 
   const cadMaterial = new THREE.MeshStandardMaterial({color: '#8c98ad', metalness: .48, roughness: .35, envMapIntensity: .8, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1});
   const stressMaterial = new THREE.MeshStandardMaterial({vertexColors: true, metalness: 0, roughness: .9, envMapIntensity: .12, toneMapped: false, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1});
-  const installedMaterial = new THREE.MeshStandardMaterial({color: '#3431bc', metalness: .4, roughness: .32, emissive: '#161150', emissiveIntensity: .08, side: THREE.DoubleSide});
   const meshMaterial = new THREE.LineBasicMaterial({color: '#4b51bc', transparent: true, opacity: .27, depthWrite: false});
   const stressMeshMaterial = new THREE.LineBasicMaterial({color: '#17204b', transparent: true, opacity: .12, depthWrite: false});
   const edgeMaterial = new THREE.LineBasicMaterial({color: '#576179', transparent: true, opacity: .22, depthWrite: false});
   const surfaces: THREE.Mesh[] = [], wires: THREE.LineSegments[] = [], edges: THREE.LineSegments[] = [];
+  const sourceFinishes = new Map<THREE.Mesh, THREE.Material | THREE.Material[]>();
   const ownedGeometries = new Set<THREE.BufferGeometry>([grid.geometry]);
-  const ownedMaterials = new Set<THREE.Material>([cadMaterial, stressMaterial, installedMaterial, meshMaterial, stressMeshMaterial, edgeMaterial, ...gridMaterials]);
+  const ownedMaterials = new Set<THREE.Material>([cadMaterial, stressMaterial, meshMaterial, stressMeshMaterial, edgeMaterial, ...gridMaterials]);
   const assemblyMaterials: THREE.MeshStandardMaterial[] = [];
   const loader = new GLTFLoader();
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -107,7 +112,18 @@ export function createRobotEngine(host: HTMLDivElement, callbacks: Callbacks, si
   let partBounds = new THREE.Box3(), stage: RobotStage = 0, active = false, autoRotate = !reduced.matches;
   let meshVisible = true, disposed = false, frame = 0, partReady = false, assemblyReady = false, loadingAssembly = false;
   let renderCount = 0, drawing = false, view: RobotView = 'isometric', settleUntil = 0, lastFrame = performance.now();
-  let transition: null | {start: number; duration: number; partFrom: THREE.Vector3; partTo: THREE.Vector3; cameraFrom: THREE.Vector3; cameraTo: THREE.Vector3; targetFrom: THREE.Vector3; targetTo: THREE.Vector3; opacityFrom: number; opacityTo: number; groundFrom: number; groundTo: number} = null;
+  let transition: null | {start: number; duration: number; partFrom: THREE.Vector3; partTo: THREE.Vector3; rotationFrom: THREE.Quaternion; rotationTo: THREE.Quaternion; distanceFrom: number; distanceTo: number; targetFrom: THREE.Vector3; targetTo: THREE.Vector3; opacityFrom: number; opacityTo: number; groundFrom: number; groundTo: number} = null;
+
+  function sourceFinish(original: THREE.Material) {
+    const material = original instanceof THREE.MeshStandardMaterial ? original.clone() : new THREE.MeshStandardMaterial();
+    material.vertexColors = false;
+    material.metalness = Math.min(material.metalness, .35);
+    material.roughness = Math.max(material.roughness, .35);
+    material.envMapIntensity = .65;
+    material.side = THREE.DoubleSide;
+    material.polygonOffset = true; material.polygonOffsetFactor = 1; material.polygonOffsetUnits = 1;
+    ownedMaterials.add(material); return material;
+  }
 
   function trackScene(root: THREE.Object3D) {
     root.traverse(object => {
@@ -132,9 +148,9 @@ export function createRobotEngine(host: HTMLDivElement, callbacks: Callbacks, si
     } else {bytes = await response.arrayBuffer(); callbacks.onLoad(kind, .9);}
     return loader.parseAsync(bytes, '/assets/models/');
   }
-  function fitDistance(bounds: THREE.Box3, direction = directionForView()) {
+  function fitDistance(bounds: THREE.Box3, direction = directionForView(), cameraUp = camera.up) {
     const half = bounds.getSize(new THREE.Vector3()).multiplyScalar(.5);
-    const right = new THREE.Vector3().crossVectors(new THREE.Vector3(0, 1, 0), direction).normalize();
+    const right = new THREE.Vector3().crossVectors(cameraUp, direction).normalize();
     const up = new THREE.Vector3().crossVectors(direction, right).normalize();
     let width = 0, height = 0, depth = 0;
     for (const x of [-half.x, half.x]) for (const y of [-half.y, half.y]) for (const z of [-half.z, half.z]) {
@@ -158,12 +174,15 @@ export function createRobotEngine(host: HTMLDivElement, callbacks: Callbacks, si
     const partTo = (full ? fullCentre : partCentre).clone().negate();
     const direction = resetCamera ? directionForView() : camera.position.clone().sub(controls.target).normalize();
     if (direction.lengthSq() < .01) direction.copy(directionForView());
-    const distance = fitDistance(full ? FULL_BOUNDS : partBounds, direction) * (full ? .86 : 1);
+    const up = resetCamera ? new THREE.Vector3(0, 1, 0) : camera.up.clone();
+    const distance = fitDistance(full ? FULL_BOUNDS : partBounds, direction, up) * (full ? .86 : 1);
     const targetTo = new THREE.Vector3();
+    const rotationTo = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(direction, targetTo, up));
     transition = {
       start: performance.now(), duration: reduced.matches ? 1 : cameraOnly ? 650 : 1250,
       partFrom: componentRoot.position.clone(), partTo,
-      cameraFrom: camera.position.clone(), cameraTo: direction.multiplyScalar(distance),
+      rotationFrom: camera.quaternion.clone(), rotationTo,
+      distanceFrom: camera.position.distanceTo(controls.target), distanceTo: distance,
       targetFrom: controls.target.clone(), targetTo,
       opacityFrom: currentOpacity(), opacityTo: full ? 1 : 0,
       groundFrom: grid.position.y, groundTo: full ? FULL_BOUNDS.min.y - fullCentre.y - .025 : partBounds.min.y - partCentre.y - .025,
@@ -171,7 +190,7 @@ export function createRobotEngine(host: HTMLDivElement, callbacks: Callbacks, si
     wake();
   }
   function applyStage() {
-    surfaces.forEach(mesh => {mesh.material = stage === 2 ? stressMaterial : stage === 3 ? installedMaterial : cadMaterial;});
+    surfaces.forEach(mesh => {mesh.material = stage === 2 ? stressMaterial : stage === 1 ? cadMaterial : sourceFinishes.get(mesh) || cadMaterial;});
     wires.forEach(wire => {wire.visible = (stage === 1 || stage === 2) && meshVisible; wire.material = stage === 2 ? stressMeshMaterial : meshMaterial;});
     edges.forEach(edge => {edge.visible = stage === 0;});
     host.dataset.stage = String(stage);
@@ -190,10 +209,10 @@ export function createRobotEngine(host: HTMLDivElement, callbacks: Callbacks, si
         const association = gltf.parser.associations.get(object);
         if (association?.nodes === SOURCE_COMPONENT_NODE || object.name === SOURCE_COMPONENT_NAME) object.visible = false;
         if (object instanceof THREE.Mesh) {
-          const original = Array.isArray(object.material) ? object.material[0] : object.material;
-          const dark = original instanceof THREE.MeshStandardMaterial && original.color.getHSL({h: 0, s: 0, l: 0}).l < .12;
-          const material = new THREE.MeshStandardMaterial({color: dark ? '#283044' : '#97a4b8', metalness: dark ? .4 : .48, roughness: dark ? .42 : .36, envMapIntensity: .8, side: THREE.DoubleSide, transparent: true, opacity: 0});
-          object.material = material; ownedMaterials.add(material); assemblyMaterials.push(material);
+          const materials = (Array.isArray(object.material) ? object.material : [object.material]).map(original => {
+            const material = sourceFinish(original); material.transparent = true; material.opacity = 0; assemblyMaterials.push(material); return material;
+          });
+          object.material = Array.isArray(object.material) ? materials : materials[0];
         }
       });
       remove.forEach(object => object.removeFromParent());
@@ -209,21 +228,26 @@ export function createRobotEngine(host: HTMLDivElement, callbacks: Callbacks, si
     if (disposed) return;
     drawing = true;
     const delta = Math.min((now - lastFrame) / 1000, .05); lastFrame = now;
-    controls.autoRotate = autoRotate && active && !reduced.matches && !transition;
+    if (autoRotate && active && !reduced.matches && !transition) rotateRobotCamera(camera, controls.target, THREE.MathUtils.degToRad(3.9) * delta, 0);
     if (transition) {
       const t = Math.min(1, (now - transition.start) / transition.duration);
       const ease = t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
       componentRoot.position.lerpVectors(transition.partFrom, transition.partTo, ease);
-      camera.position.lerpVectors(transition.cameraFrom, transition.cameraTo, ease);
       controls.target.lerpVectors(transition.targetFrom, transition.targetTo, ease);
+      const rotation = transition.rotationFrom.clone().slerp(transition.rotationTo, ease);
+      const distance = THREE.MathUtils.lerp(transition.distanceFrom, transition.distanceTo, ease);
+      camera.position.copy(controls.target).add(new THREE.Vector3(0, 0, distance).applyQuaternion(rotation));
+      camera.up.set(0, 1, 0).applyQuaternion(rotation);
       updateAssemblyOpacity(THREE.MathUtils.lerp(transition.opacityFrom, transition.opacityTo, ease));
       grid.position.y = THREE.MathUtils.lerp(transition.groundFrom, transition.groundTo, ease);
       if (t === 1) {transition = null; settleUntil = now + 200;}
     }
-    controls.update(delta);
+    controls.update();
     renderer.render(scene, camera);
     host.dataset.renderFrame = String(++renderCount);
     host.dataset.motion = active ? autoRotate && !reduced.matches ? 'orbiting' : 'interactive' : 'paused';
+    host.dataset.cameraUp = camera.up.toArray().map(value => value.toFixed(5)).join(',');
+    host.dataset.cameraOffset = camera.position.clone().sub(controls.target).toArray().map(value => value.toFixed(5)).join(',');
     drawing = false;
     if (active && !document.hidden && (autoRotate && !reduced.matches || transition || now < settleUntil)) frame = requestAnimationFrame(draw);
   }
@@ -231,16 +255,20 @@ export function createRobotEngine(host: HTMLDivElement, callbacks: Callbacks, si
     if (!disposed && !frame && !document.hidden) {lastFrame = performance.now(); frame = requestAnimationFrame(draw);}
   }
   function interact() {
-    autoRotate = false; controls.autoRotate = false; transition = null; callbacks.onInteraction(); settleUntil = performance.now() + 1100; wake();
+    autoRotate = false; transition = null; callbacks.onInteraction(); settleUntil = performance.now() + 1100; wake();
   }
   controls.addEventListener('start', interact);
   const changed = () => {if (!frame && !drawing) {settleUntil = performance.now() + 900; wake();}};
   controls.addEventListener('change', changed);
+  const pointerMove = (event: PointerEvent) => {if (event.buttons || event.pointerType === 'touch') {settleUntil = performance.now() + 1100; wake();}};
+  canvas.addEventListener('pointermove', pointerMove);
+  const scrollViewport = () => controls.handleResize(); window.addEventListener('scroll', scrollViewport, {passive: true});
   const contextMenu = (event: Event) => event.preventDefault(); canvas.addEventListener('contextmenu', contextMenu);
   const resize = new ResizeObserver(() => {
     const width = host.clientWidth, height = host.clientHeight; if (!width || !height) return;
     camera.aspect = width / height; camera.updateProjectionMatrix(); renderer.setSize(width, height, false);
-    if (partReady) beginTransition(true, true); else {camera.position.copy(directionForView().multiplyScalar(1.7)); wake();}
+    controls.handleResize();
+    if (partReady) beginTransition(false, true); else {camera.position.copy(directionForView().multiplyScalar(1.7)); wake();}
   }); resize.observe(host);
   const motionPolicy = () => {if (reduced.matches) autoRotate = false; settleUntil = performance.now() + 100; wake();};
   reduced.addEventListener('change', motionPolicy);
@@ -253,6 +281,7 @@ export function createRobotEngine(host: HTMLDivElement, callbacks: Callbacks, si
     const partMeshes: THREE.Mesh[] = [];
     gltf.scene.traverse(object => {if (object instanceof THREE.Mesh) partMeshes.push(object);});
     partMeshes.forEach(mesh => {
+      sourceFinishes.set(mesh, Array.isArray(mesh.material) ? mesh.material.map(sourceFinish) : sourceFinish(mesh.material));
       const geometry = mesh.geometry.clone(); ownedGeometries.add(geometry); stressColours(geometry); mesh.geometry = geometry;
       mesh.material = cadMaterial; surfaces.push(mesh);
       const wireGeometry = new THREE.WireframeGeometry(geometry); ownedGeometries.add(wireGeometry);
@@ -274,12 +303,14 @@ export function createRobotEngine(host: HTMLDivElement, callbacks: Callbacks, si
     setMeshVisible(value) {meshVisible = value; applyStage(); wake();},
     setView(value) {view = value; autoRotate = false; callbacks.onInteraction(); beginTransition(true, true);},
     zoom(direction) {if (!partReady) return; interact(); const offset = camera.position.clone().sub(controls.target); const distance = THREE.MathUtils.clamp(offset.length() * (direction > 0 ? .82 : 1.22), controls.minDistance, controls.maxDistance); camera.position.copy(controls.target).add(offset.setLength(distance)); controls.update(); wake();},
-    rotate(horizontal, vertical) {if (!partReady) return; interact(); const spherical = new THREE.Spherical().setFromVector3(camera.position.clone().sub(controls.target)); spherical.theta += horizontal; spherical.phi = THREE.MathUtils.clamp(spherical.phi + vertical, .05, Math.PI - .05); camera.position.copy(controls.target).add(new THREE.Vector3().setFromSpherical(spherical)); controls.update(); wake();},
+    rotate(horizontal, vertical) {if (!partReady) return; interact(); rotateRobotCamera(camera, controls.target, horizontal, vertical); controls.update(); wake();},
+    roll(angle) {if (!partReady) return; interact(); rotateRobotCamera(camera, controls.target, 0, 0, angle); controls.update(); wake();},
     pan(horizontal, vertical) {if (!partReady) return; interact(); const distance = camera.position.distanceTo(controls.target); const right = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 0); const up = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 1); const offset = right.multiplyScalar(horizontal * distance * .035).add(up.multiplyScalar(vertical * distance * .035)); camera.position.add(offset); controls.target.add(offset); controls.update(); wake();},
     reset() {view = 'isometric'; autoRotate = false; callbacks.onInteraction(); beginTransition(true, true);},
     dispose() {
       if (disposed) return; disposed = true; cancelAnimationFrame(frame); resize.disconnect(); reduced.removeEventListener('change', motionPolicy);
       controls.removeEventListener('start', interact); controls.removeEventListener('change', changed); controls.dispose(); canvas.removeEventListener('contextmenu', contextMenu);
+      canvas.removeEventListener('pointermove', pointerMove); window.removeEventListener('scroll', scrollViewport);
       ownedGeometries.forEach(geometry => geometry.dispose()); ownedMaterials.forEach(material => material.dispose()); environment.dispose(); renderer.dispose(); canvas.remove();
     },
   };
