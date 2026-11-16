@@ -1,0 +1,21 @@
+.brand-transition-cover {
+  height: auto;
+  padding: 40px;
+  background: #f7f8fa;
+}
+.brand-transition-cover > img {
+  height: auto;
+  object-fit: contain;
+  filter: none;
+}
+.brand-transition-image {
+  background: #f7f8fa;
+}
+.brand-transition-image > img {
+  object-fit: contain;
+  padding: 20px;
+  filter: none;
+}
+@media (max-width: 767px) {
+  .brand-transition-cover { padding: 24px 16px; }
+}
