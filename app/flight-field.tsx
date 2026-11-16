@@ -60,6 +60,8 @@ export default function FlightField({dark=false,shape,formed=false}:{dark?:boole
       const beat=Math.exp(-Math.pow((beatPhase-.12)/.045,2))+.55*Math.exp(-Math.pow((beatPhase-.24)/.065,2));
       const breath=Math.sin(time)*.065+Math.cos(time*3)*.042+beat*.024;
       const span=Math.min(width*.98,height*.94);
+      // Reference point sizing uses CSS canvas width; pixel density cancels out.
+      const flowScale=3.5*(dark?.65:.59)*(width/2000);
       const columns=Math.ceil(Math.sqrt(points.length*width/height)),rows=Math.ceil(points.length/columns);
       ctx.clearRect(0,0,width,height);
       for(let i=0;i<points.length;i++){
@@ -100,8 +102,10 @@ export default function FlightField({dark=false,shape,formed=false}:{dark?:boole
         ctx.globalAlpha=shape?mix(.25+p.depth*.35,.7+p.depth*.25,shaped):(dark?.3:.22)+p.depth*.56;
         ctx.fillStyle=shape?(shaped>.08?'#4544df':i%9===0?'#7564cf':'#34343e'):colours[Math.floor(p.u*4)%4];
         if(shape){ctx.beginPath();ctx.arc(p.x,p.y,size*.6,0,TAU);ctx.fill();}else{
+          // Keep fine background specks and give prominent dashes the reference proportions.
+          const length=flowScale*(.3+4.4375*p.depth*p.depth),thickness=length*.4;
           ctx.save();ctx.translate(p.x,p.y);ctx.rotate(angle);
-          ctx.fillRect(-size*.45,-size, size*.9,size*(1.8+p.depth));ctx.restore();
+          ctx.beginPath();ctx.roundRect(-thickness*.5,-length*.5,thickness,length,thickness*.5);ctx.fill();ctx.restore();
         }
       }
       ctx.globalAlpha=1;
