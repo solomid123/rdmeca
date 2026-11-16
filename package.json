@@ -1,0 +1,1 @@
+{"name":"rdmeca-website","private":true,"type":"module","scripts":{"build":"node build.mjs","check":"node verify.mjs","dev":"node preview.mjs"}}
