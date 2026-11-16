@@ -54,7 +54,7 @@ function stressColours(geometry: THREE.BufferGeometry) {
 
 export function createRobotEngine(host: HTMLDivElement, callbacks: Callbacks, signal: AbortSignal): RobotEngine {
   const renderer = new THREE.WebGLRenderer({alpha: true, antialias: true, powerPreference: 'high-performance'});
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.6));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.3));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = .95;
@@ -79,6 +79,7 @@ export function createRobotEngine(host: HTMLDivElement, callbacks: Callbacks, si
   controls.maxDistance = 8;
   controls.target.set(0, 0, 0);
   controls.mouseButtons = {LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN};
+  const renderedCamera = camera.clone();
 
   const pmrem = new THREE.PMREMGenerator(renderer);
   const room = new RoomEnvironment();
@@ -91,10 +92,6 @@ export function createRobotEngine(host: HTMLDivElement, callbacks: Callbacks, si
 
   const componentRoot = new THREE.Group(); scene.add(componentRoot);
   const assemblyRoot = new THREE.Group(); assemblyRoot.visible = false; scene.add(assemblyRoot);
-  const grid = new THREE.GridHelper(4, 32, 0xc5cbe0, 0xe0e4ef);
-  const gridMaterials = Array.isArray(grid.material) ? grid.material : [grid.material];
-  gridMaterials.forEach(material => {material.transparent = true; material.opacity = .25; material.depthWrite = false;});
-  grid.position.y = -.38; scene.add(grid);
 
   const cadMaterial = new THREE.MeshStandardMaterial({color: '#8c98ad', metalness: .48, roughness: .35, envMapIntensity: .8, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1});
   const stressMaterial = new THREE.MeshStandardMaterial({vertexColors: true, metalness: 0, roughness: .9, envMapIntensity: .12, toneMapped: false, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1});
@@ -103,8 +100,8 @@ export function createRobotEngine(host: HTMLDivElement, callbacks: Callbacks, si
   const edgeMaterial = new THREE.LineBasicMaterial({color: '#576179', transparent: true, opacity: .22, depthWrite: false});
   const surfaces: THREE.Mesh[] = [], wires: THREE.LineSegments[] = [], edges: THREE.LineSegments[] = [];
   const sourceFinishes = new Map<THREE.Mesh, THREE.Material | THREE.Material[]>();
-  const ownedGeometries = new Set<THREE.BufferGeometry>([grid.geometry]);
-  const ownedMaterials = new Set<THREE.Material>([cadMaterial, stressMaterial, meshMaterial, stressMeshMaterial, edgeMaterial, ...gridMaterials]);
+  const ownedGeometries = new Set<THREE.BufferGeometry>();
+  const ownedMaterials = new Set<THREE.Material>([cadMaterial, stressMaterial, meshMaterial, stressMeshMaterial, edgeMaterial]);
   const assemblyMaterials: THREE.MeshStandardMaterial[] = [];
   const loader = new GLTFLoader();
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -112,7 +109,7 @@ export function createRobotEngine(host: HTMLDivElement, callbacks: Callbacks, si
   let partBounds = new THREE.Box3(), stage: RobotStage = 0, active = false, autoRotate = !reduced.matches;
   let meshVisible = true, disposed = false, frame = 0, partReady = false, assemblyReady = false, loadingAssembly = false;
   let renderCount = 0, drawing = false, view: RobotView = 'isometric', settleUntil = 0, lastFrame = performance.now();
-  let transition: null | {start: number; duration: number; partFrom: THREE.Vector3; partTo: THREE.Vector3; rotationFrom: THREE.Quaternion; rotationTo: THREE.Quaternion; distanceFrom: number; distanceTo: number; targetFrom: THREE.Vector3; targetTo: THREE.Vector3; opacityFrom: number; opacityTo: number; groundFrom: number; groundTo: number} = null;
+  let transition: null | {start: number; duration: number; partFrom: THREE.Vector3; partTo: THREE.Vector3; rotationFrom: THREE.Quaternion; rotationTo: THREE.Quaternion; distanceFrom: number; distanceTo: number; targetFrom: THREE.Vector3; targetTo: THREE.Vector3; opacityFrom: number; opacityTo: number} = null;
 
   function sourceFinish(original: THREE.Material) {
     const material = original instanceof THREE.MeshStandardMaterial ? original.clone() : new THREE.MeshStandardMaterial();
@@ -185,7 +182,6 @@ export function createRobotEngine(host: HTMLDivElement, callbacks: Callbacks, si
       distanceFrom: camera.position.distanceTo(controls.target), distanceTo: distance,
       targetFrom: controls.target.clone(), targetTo,
       opacityFrom: currentOpacity(), opacityTo: full ? 1 : 0,
-      groundFrom: grid.position.y, groundTo: full ? FULL_BOUNDS.min.y - fullCentre.y - .025 : partBounds.min.y - partCentre.y - .025,
     };
     wake();
   }
@@ -227,7 +223,7 @@ export function createRobotEngine(host: HTMLDivElement, callbacks: Callbacks, si
     frame = 0;
     if (disposed) return;
     drawing = true;
-    const delta = Math.min((now - lastFrame) / 1000, .05); lastFrame = now;
+    const elapsed = (now - lastFrame) / 1000, delta = Math.min(elapsed, .05); lastFrame = now;
     if (autoRotate && active && !reduced.matches && !transition) rotateRobotCamera(camera, controls.target, THREE.MathUtils.degToRad(3.9) * delta, 0);
     if (transition) {
       const t = Math.min(1, (now - transition.start) / transition.duration);
@@ -239,17 +235,24 @@ export function createRobotEngine(host: HTMLDivElement, callbacks: Callbacks, si
       camera.position.copy(controls.target).add(new THREE.Vector3(0, 0, distance).applyQuaternion(rotation));
       camera.up.set(0, 1, 0).applyQuaternion(rotation);
       updateAssemblyOpacity(THREE.MathUtils.lerp(transition.opacityFrom, transition.opacityTo, ease));
-      grid.position.y = THREE.MathUtils.lerp(transition.groundFrom, transition.groundTo, ease);
       if (t === 1) {transition = null; settleUntil = now + 200;}
     }
     controls.update();
-    renderer.render(scene, camera);
+    // Keep pointer input immediate, then smooth only the displayed camera.
+    // This gives a short, time-based response without trackball overspin.
+    const response = reduced.matches ? 1 : 1 - Math.exp(-30 * elapsed);
+    renderedCamera.position.lerp(camera.position, response);
+    renderedCamera.quaternion.slerp(camera.quaternion, response);
+    renderedCamera.projectionMatrix.copy(camera.projectionMatrix);
+    renderedCamera.projectionMatrixInverse.copy(camera.projectionMatrixInverse);
+    const viewMoving = renderedCamera.position.distanceToSquared(camera.position) > 1e-8 || 1 - Math.abs(renderedCamera.quaternion.dot(camera.quaternion)) > 1e-8;
+    renderer.render(scene, renderedCamera);
     host.dataset.renderFrame = String(++renderCount);
     host.dataset.motion = active ? autoRotate && !reduced.matches ? 'orbiting' : 'interactive' : 'paused';
     host.dataset.cameraUp = camera.up.toArray().map(value => value.toFixed(5)).join(',');
     host.dataset.cameraOffset = camera.position.clone().sub(controls.target).toArray().map(value => value.toFixed(5)).join(',');
     drawing = false;
-    if (active && !document.hidden && (autoRotate && !reduced.matches || transition || now < settleUntil)) frame = requestAnimationFrame(draw);
+    if (active && !document.hidden && (autoRotate && !reduced.matches || transition || viewMoving || now < settleUntil)) frame = requestAnimationFrame(draw);
   }
   function wake() {
     if (!disposed && !frame && !document.hidden) {lastFrame = performance.now(); frame = requestAnimationFrame(draw);}
@@ -267,6 +270,7 @@ export function createRobotEngine(host: HTMLDivElement, callbacks: Callbacks, si
   const resize = new ResizeObserver(() => {
     const width = host.clientWidth, height = host.clientHeight; if (!width || !height) return;
     camera.aspect = width / height; camera.updateProjectionMatrix(); renderer.setSize(width, height, false);
+    controls.rotateSpeed = 1.8 * width / Math.min(width, height);
     controls.handleResize();
     if (partReady) beginTransition(false, true); else {camera.position.copy(directionForView().multiplyScalar(1.7)); wake();}
   }); resize.observe(host);
@@ -291,7 +295,7 @@ export function createRobotEngine(host: HTMLDivElement, callbacks: Callbacks, si
     });
     componentRoot.position.copy(partCentre).negate();
     camera.position.copy(directionForView().multiplyScalar(fitDistance(partBounds))); controls.target.set(0, 0, 0); controls.update();
-    grid.position.y = partBounds.min.y - partCentre.y - .025;
+    renderedCamera.position.copy(camera.position); renderedCamera.quaternion.copy(camera.quaternion);
     partReady = true; host.dataset.status = 'ready'; callbacks.onLoad('ready', 1); applyStage(); wake();
     if (stage === 3) {if (assemblyReady) beginTransition(); else void ensureAssembly();}
   }).catch(() => {if (!disposed && !signal.aborted) {host.dataset.status = 'error'; callbacks.onLoad('error');}});
@@ -305,7 +309,7 @@ export function createRobotEngine(host: HTMLDivElement, callbacks: Callbacks, si
     zoom(direction) {if (!partReady) return; interact(); const offset = camera.position.clone().sub(controls.target); const distance = THREE.MathUtils.clamp(offset.length() * (direction > 0 ? .82 : 1.22), controls.minDistance, controls.maxDistance); camera.position.copy(controls.target).add(offset.setLength(distance)); controls.update(); wake();},
     rotate(horizontal, vertical) {if (!partReady) return; interact(); rotateRobotCamera(camera, controls.target, horizontal, vertical); controls.update(); wake();},
     roll(angle) {if (!partReady) return; interact(); rotateRobotCamera(camera, controls.target, 0, 0, angle); controls.update(); wake();},
-    pan(horizontal, vertical) {if (!partReady) return; interact(); const distance = camera.position.distanceTo(controls.target); const right = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 0); const up = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 1); const offset = right.multiplyScalar(horizontal * distance * .035).add(up.multiplyScalar(vertical * distance * .035)); camera.position.add(offset); controls.target.add(offset); controls.update(); wake();},
+    pan(horizontal, vertical) {if (!partReady) return; interact(); const distance = camera.position.distanceTo(controls.target); const right = camera.up.clone().cross(camera.position.clone().sub(controls.target)).normalize(); const up = camera.up.clone().normalize(); const offset = right.multiplyScalar(horizontal * distance * .035).add(up.multiplyScalar(vertical * distance * .035)); camera.position.add(offset); controls.target.add(offset); controls.update(); wake();},
     reset() {view = 'isometric'; autoRotate = false; callbacks.onInteraction(); beginTransition(true, true);},
     dispose() {
       if (disposed) return; disposed = true; cancelAnimationFrame(frame); resize.disconnect(); reduced.removeEventListener('change', motionPolicy);
