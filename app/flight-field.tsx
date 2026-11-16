@@ -11,7 +11,7 @@ export function TypedText({text}:{text:string}) {
     const observer=new IntersectionObserver(entries=>{
       if(!entries[0].isIntersecting)return;
       observer.disconnect();let length=0;setVisible('');
-      timer=setInterval(()=>{length+=2;setVisible(text.slice(0,length));if(length>=text.length)clearInterval(timer);},24);
+      timer=setInterval(()=>{length+=1;setVisible(text.slice(0,length));if(length>=text.length)clearInterval(timer);},55);
     },{threshold:.2});
     if(host.current)observer.observe(host.current);
     return()=>{observer.disconnect();clearInterval(timer);};
