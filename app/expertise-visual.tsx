@@ -6,9 +6,11 @@ import type {Lang} from './site-data';
 
 const visuals:Record<string,{image:string;video?:string}>={
   design:{image:'expertise-design.webp'},
-  analysis:{image:'expertise-analysis.webp'},
-  industrialisation:{image:'expertise-industrialisation.webp',video:'expertise-industrialisation.mp4'},
+  analysis:{image:'expertise-analysis-abaqus.webp'},
+  industrialisation:{image:'expertise-industrialisation-assembly.webp'},
   preventive:{image:'expertise-preventive.webp',video:'expertise-preventive.mp4'},
+  predictive:{image:'expertise-predictive-sensors.webp'},
+  corrective:{image:'expertise-corrective-intervention.webp'},
 };
 type Props={id:string;fallback:string;alt:string;lang:Lang;href?:string;eager?:boolean};
 
