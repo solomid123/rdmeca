@@ -16,6 +16,10 @@ Use the Sites dependency/build helpers, preserving `sites()` and the Cloudflare 
 
 Editorial seed content is in `editorial-seed.mjs`, separate from schema migrations. Production migrations run during Sites deployment; editorial content is populated afterward through the protected content endpoint. The host-seeding script reads its credential from stdin. Contact data is not part of seeds or deployment archives.
 
+## Search content
+
+`app/search-copy.ts` defines French and English search titles and descriptions for the main pages, six services and five sectors. Service pages explain project inputs and deliverables through `app/service-guide.tsx`, with nationwide Morocco coverage and related-service links defined in `app/service-guides.ts`. `lib/search-schema.ts` describes the real company, bilingual website, current page and service without inventing offices, ratings or completed client projects. Static-page sitemap dates use the explicit content update date in `search-copy.ts`; update it when those pages materially change. `node --experimental-strip-types scripts/check-live-search-pages.mjs` checks published search metadata, structured data and visible guidance; `scripts/check-live-indexing.mjs` checks all sitemap URLs and language links.
+
 ## Brand and media
 
 The current design uses the owner's November 2026 indigo/navy logo and silver variant. The colour logo appears in the header and downloads; the silver logo appears on the dark footer. `app/home-intro.tsx` defines the new homepage composition and `app/brand.css` defines the shared brand surfaces and responsive typography. Ordinary body text is 16–17px, supporting text is generally 13–15px, and headline sizes are restrained. Glass effects are limited to navigation and selected panels. The brand kit includes both new transparent logo variants.
