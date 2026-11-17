@@ -25,6 +25,10 @@
     ]
   },
   "workers_dev": true,
+  "routes": [
+    { "pattern": "rdmeca.com", "custom_domain": true },
+    { "pattern": "www.rdmeca.com", "custom_domain": true }
+  ],
   "d1_databases": [
     {
       "binding": "DB",
@@ -34,7 +38,7 @@
     }
   ],
   "vars": {
-    "PUBLIC_SITE_URL": "https://rdmeca.rdmeca-consultancy.workers.dev"
+    "PUBLIC_SITE_URL": "https://rdmeca.com"
   },
   "observability": {
     "enabled": true

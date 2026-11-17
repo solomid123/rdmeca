@@ -2,9 +2,12 @@ import handler from "vinext/server/fetch-handler";
 import { runWithConnectorBinding } from "../lib/connector-context";
 import type { ConnectorBinding } from "../lib/connector-contract.mjs";
 import {serveVideoAsset} from './video-assets';
+import {redirectToCanonicalDomain} from './canonical-domain';
 
 const worker = {
   fetch(request: Request, env: Cloudflare.Env, ctx: ExecutionContext<{ CONNECTORS?: ConnectorBinding }>) {
+    const redirect = redirectToCanonicalDomain(request, env.PUBLIC_SITE_URL);
+    if (redirect) return redirect;
     if(env.ASSETS&&new URL(request.url).pathname.match(/^\/assets\/[^/]+\.mp4$/))return serveVideoAsset(request,env.ASSETS);
     let binding = ctx.props?.CONNECTORS;
     // Local preview emulates the same request-scoped capability. This branch and

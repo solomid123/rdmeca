@@ -26,4 +26,4 @@ Logo: supplied R&D MECA PNG with transparent margins cropped. Photos: aluminum Z
 
 ## Domain and business information
 
-The intended brand domain is rdmeca.com. Update canonical origins in `content.mjs`, `app/layout.tsx`, `app/robots.ts` and `app/sitemap.ts` when connecting the final domain, then rebuild and publish. Add the confirmed registered legal entity, address and any applicable local business disclosures before the final domain launch. Current public contacts are contact@rdmeca.com and +33 7 45 76 80 10.
+The production brand domain is https://rdmeca.com. `PUBLIC_SITE_URL` and the `content.mjs` fallback both use that origin; `getSiteOrigin()` supplies canonical URLs, language links, social metadata, robots and the sitemap. Public page routes use trailing slashes consistently. The Worker hostname and www domain redirect to the corresponding primary-domain pages. Google Search Console ownership verification and sitemap submission are separate account steps. Add the confirmed registered legal entity, address and any applicable local business disclosures. Current public contacts are contact@rdmeca.com and +33 7 45 76 80 10.

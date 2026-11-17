@@ -1,7 +1,7 @@
 export const business = {
   name: 'R&D MECA', email: 'contact@rdmeca.com', phone: '+33 7 45 76 80 10',
   tel: '+33745768010', whatsapp: '33745768010', country: 'Maroc',
-  origin: 'https://rdmeca-consultancy.okimanlolq.chatgpt.site'
+  origin: 'https://rdmeca.com'
 };
 
 export const services = [

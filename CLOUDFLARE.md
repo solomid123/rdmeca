@@ -2,7 +2,11 @@
 
 The production Worker is `rdmeca`, with the `DB` binding connected to the `rdmeca-production` D1 database. `wrangler.cloudflare.jsonc` contains the account and binding configuration; secrets are stored separately in Cloudflare.
 
-Production URL: https://rdmeca.rdmeca-consultancy.workers.dev
+Production URL: https://rdmeca.com
+
+The Worker hostname and `www.rdmeca.com` permanently redirect public page requests to the matching `rdmeca.com` URL, preserving paths and query strings. Connect `www.rdmeca.com` to this Worker as a custom domain so HTTPS requests reach that redirect.
+
+Public page URLs use trailing slashes consistently in routing, canonical links, language links and the sitemap. Metadata files and asset URLs retain their file extensions.
 
 ## Update the site
 
@@ -19,4 +23,4 @@ On Cloudflare Workers Builds, use `npm run build` as the build command and `npm 
 
 The Worker needs the `CMS_WRITE_TOKEN` secret for protected editorial updates and enquiry retrieval. It is excluded from Git. Editorial content is defined in `editorial-seed.mjs`; populate a new database with `node scripts/seed-content.mjs <production-url>`, supplying the credential through stdin. Existing databases do not need reseeding on each deployment.
 
-`PUBLIC_SITE_URL` sets canonical links, social metadata and the sitemap. When connecting `rdmeca.com`, update that variable to `https://rdmeca.com` and deploy the configuration. The public site does not require visitors to sign in.
+`PUBLIC_SITE_URL` is `https://rdmeca.com` and sets canonical links, language links, social metadata and the sitemap. The source content uses the same origin as its fallback. The public site does not require visitors to sign in.
