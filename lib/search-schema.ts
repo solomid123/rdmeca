@@ -8,9 +8,15 @@ type SearchSchemaInput = {
   description: string;
   lang: Lang;
   serviceName?: string;
+  project?: {
+    author: {name: string};
+    context: string;
+    image: string;
+    publishedAt: string;
+  };
 };
 
-export function searchSchema({origin, url, title, description, lang, serviceName}: SearchSchemaInput) {
+export function searchSchema({origin, url, title, description, lang, serviceName, project}: SearchSchemaInput) {
   const organizationId = new URL('/#organization', origin).href;
   const websiteId = new URL('/#website', origin).href;
   const serviceId = url + '#service';
@@ -31,12 +37,21 @@ export function searchSchema({origin, url, title, description, lang, serviceName
       name: title, description, inLanguage: lang,
       isPartOf: {'@id': websiteId}, about: {'@id': organizationId},
       ...(serviceName ? {mainEntity: {'@id': serviceId}} : {}),
+      ...(project ? {mainEntity: {'@id': url + '#case-study'}} : {}),
     },
   ];
   if (serviceName) graph.push({
     '@type': 'Service', '@id': serviceId, name: serviceName, serviceType: serviceName,
     url, description, provider: {'@id': organizationId},
     areaServed: {'@type': 'Country', name: 'Morocco'},
+  });
+  if (project) graph.push({
+    '@type': 'CreativeWork', '@id': url + '#case-study',
+    name: title, description, url, inLanguage: lang,
+    image: new URL(project.image, origin).href, datePublished: project.publishedAt,
+    author: {'@type': 'Person', name: project.author.name},
+    publisher: {'@id': organizationId},
+    creditText: project.author.name + ' · ' + project.context,
   });
   return {'@context': 'https://schema.org', '@graph': graph};
 }

@@ -1,10 +1,12 @@
 import {readFileSync} from 'node:fs';
 import {createInterface} from 'node:readline';
 import {seedItems} from '../editorial-seed.mjs';
+import {professionalCaseStudies} from '../professional-case-studies.mjs';
 const origin=process.argv[2]||'http://127.0.0.1:4173';
 const requestedTypes=process.argv[3]?.split(',');
 if(requestedTypes?.some(type=>!['article','portfolio','press','video'].includes(type)))throw new Error('Unknown content type.');
-const items=requestedTypes?seedItems.filter(item=>requestedTypes.includes(item.type)):seedItems;
+const allItems=[...seedItems,...professionalCaseStudies];
+const items=requestedTypes?allItems.filter(item=>requestedTypes.includes(item.type)):allItems;
 let credential;
 if(origin.startsWith('http://127.0.0.1:')){
  const vars=readFileSync('.dev.vars','utf8');credential=vars.split('\n').find(line=>line.startsWith('CMS_WRITE_TOKEN='))?.slice('CMS_WRITE_TOKEN='.length).trim();
