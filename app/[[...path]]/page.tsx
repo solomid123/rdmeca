@@ -4,7 +4,7 @@ import {getSiteOrigin} from '../../lib/site-origin';
 import {searchSchema} from '../../lib/search-schema';
 import {routes, services, sectorData, linkTo, type Lang, type PageKey} from '../site-data';
 import {pageSearchCopy, serviceSearchCopy, sectorSearchCopy} from '../search-copy';
-import {getProjectSource, projectAuthor} from '../project-sources.mjs';
+import {getProjectSource} from '../project-sources.mjs';
 import Site from '../site';
 
 export const dynamic = 'force-dynamic';
@@ -74,7 +74,6 @@ export default async function Page({params}: Props) {
     origin, url: origin + linkTo(info.lang, info.key, info.slug), lang: info.lang,
     ...searchCopy(info, entry), ...(service ? {serviceName: service[info.lang].title} : {}),
     ...(project && entry ? {project: {
-      author: projectAuthor, context: project.context,
       image: entry.image, publishedAt: entry.publishedAt,
     }} : {}),
   });

@@ -1,17 +1,7 @@
 import Link from './site-link';
 import {ArrowRight} from 'lucide-react';
-import {getProjectSource, projectAuthor} from './project-sources.mjs';
+import {getProjectSource} from './project-sources.mjs';
 import {services, linkTo, type Lang} from './site-data';
-
-export function ProjectAttribution({lang, slug}: {lang: Lang; slug: string}) {
-  const project = getProjectSource(slug);
-  if (!project) return null;
-  const fr = lang === 'fr';
-  return <div className="project-attribution">
-    <p>{fr ? 'Parcours professionnel de ' : 'Professional experience of '}{projectAuthor.name}{' · '}{project.context}{' · France · '}{project.duration[lang]}</p>
-    <p>{project.id === 'sigma' ? (fr ? 'Projet réalisé pendant un stage d’ingénierie R&D chez Sigma.' : 'Project completed during an R&D engineering internship at Sigma.') : (fr ? 'Travaux réalisés dans le cadre d’un poste d’ingénierie mécanique R&D chez SLB Group.' : 'Work completed in a mechanical R&D engineering role at SLB Group.')}</p>
-  </div>;
-}
 
 export function ProjectServiceLinks({lang, slug}: {lang: Lang; slug: string}) {
   const project = getProjectSource(slug);

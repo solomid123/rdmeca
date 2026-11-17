@@ -9,8 +9,6 @@ type SearchSchemaInput = {
   lang: Lang;
   serviceName?: string;
   project?: {
-    author: {name: string};
-    context: string;
     image: string;
     publishedAt: string;
   };
@@ -49,9 +47,7 @@ export function searchSchema({origin, url, title, description, lang, serviceName
     '@type': 'CreativeWork', '@id': url + '#case-study',
     name: title, description, url, inLanguage: lang,
     image: new URL(project.image, origin).href, datePublished: project.publishedAt,
-    author: {'@type': 'Person', name: project.author.name},
     publisher: {'@id': organizationId},
-    creditText: project.author.name + ' · ' + project.context,
   });
   return {'@context': 'https://schema.org', '@graph': graph};
 }
