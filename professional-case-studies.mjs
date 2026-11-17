@@ -1,4 +1,4 @@
-import {professionalProjectSources} from './app/project-sources.mjs';
+import {professionalProjectSources, publishedProjectIds} from './app/project-sources.mjs';
 
 const copy = {
   fea: {
@@ -119,8 +119,8 @@ export const professionalCaseStudies = professionalProjectSources.flatMap(projec
   const content = copy[project.id][locale];
   return {
     type:'portfolio', slug:project.slug, locale, title:content.title, summary:content.summary,
-    category:content.category, image:'/assets/project-' + project.id + '.webp', mediaUrl:null, duration:null,
-    published:true, illustrative:false, publishedAt:'2026-11-17T00:00:00.000Z',
+    category:content.category, image:project.image, mediaUrl:null, duration:null,
+    published:publishedProjectIds.includes(project.id), illustrative:false, publishedAt:'2026-11-17T00:00:00.000Z',
     body:JSON.stringify({sections:content.sections.map(([heading,paragraphs])=>({heading,paragraphs})), author:'Badreddine Barki', professionalContext:project.context}),
   };
 }));
